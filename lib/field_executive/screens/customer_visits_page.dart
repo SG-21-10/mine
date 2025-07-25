@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../constants/colors.dart';
+
+// Import the form pages
 import '../widgets/AssignedCustomersPage.dart';
 import '../widgets/CustomerVisitReportFormPage.dart';
 import '../widgets/SubmitDvrPage.dart';
@@ -41,6 +42,28 @@ class _CustomerVisitsPageState extends State<CustomerVisitsPage> {
     }
   }
 
+  Future<void> visitCustomer(int customerId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://yourapi.com/api/field-executive/customers/visit'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "customerId": customerId,
+          "visitTime": DateTime.now().toIso8601String(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() => message = data['message']?.toString() ?? 'Visit recorded');
+      } else {
+        setState(() => message = 'Failed to record visit.');
+      }
+    } catch (e) {
+      setState(() => message = 'Error: ${e.toString()}');
+    }
+  }
+
   Widget buildActionCard({
     required IconData icon,
     required String title,
@@ -67,7 +90,7 @@ class _CustomerVisitsPageState extends State<CustomerVisitsPage> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 36, color: AppColors.accentBlue),
+            Icon(icon, size: 36, color: const Color(0xFFA5C8D0)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -94,10 +117,10 @@ class _CustomerVisitsPageState extends State<CustomerVisitsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundGray,
+      backgroundColor: const Color(0xFFEFF6F8),
       appBar: AppBar(
         title: const Text("CUSTOMER VISITS", style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: const Color(0xFFA5C8D0),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
@@ -164,14 +187,14 @@ class _CustomerVisitsPageState extends State<CustomerVisitsPage> {
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: Colors.black12)),
-              color: AppColors.backgroundGray,
+              color: Color(0xFFEFF6F8),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: const [
-                Icon(Icons.menu, size: 30, color: AppColors.primaryBlue),
-                Icon(Icons.arrow_back, size: 30, color: AppColors.primaryBlue),
-                Icon(Icons.settings, size: 30, color: AppColors.primaryBlue),
+                Icon(Icons.menu, size: 30, color: Color(0xFFA5C8D0)),
+                Icon(Icons.arrow_back, size: 30, color: Color(0xFFA5C8D0)),
+                Icon(Icons.settings, size: 30, color: Color(0xFFA5C8D0)),
               ],
             ),
           ),

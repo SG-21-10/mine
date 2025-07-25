@@ -7,9 +7,9 @@ import '../config/app_theme.dart';
 import '../../admin/screens/admin_drawer.dart';
 import '../../external_seller/screens/seller_drawer.dart';
 import '../../worker/screens/worker_drawer.dart';
+import '../../distributor /screens/distributorsUI.dart';
 import '../../field_executive/screens/executiveUI.dart';
-import '../../distributor/screens/distributorsUI.dart';
-import '../../accountant_app/screens/home_screen.dart';
+import '../../accountant_app/screens/acc_home_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -55,9 +55,9 @@ class _LoginPageState extends State<LoginPage> {
     } else if (email == 'worker@demo.com' && password == 'worker123') {
       homeScreen = const WorkerDrawer();
     } else if (email == 'executive@demo.com' && password == 'executive123') {
-      homeScreen = const ExecutiveUI();
+      homeScreen = const FieldExecutiveHomePage();
     } else if (email == 'distributor@demo.com' && password == 'distributor123') {
-      homeScreen = const DistributorsUI();
+      homeScreen = const DistributorHomePage();
     } else if (email == 'accountant@demo.com' && password == 'accountant123') {
       homeScreen = const AccountantHomeScreen();
     }

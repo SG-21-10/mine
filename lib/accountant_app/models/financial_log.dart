@@ -3,31 +3,19 @@ class FinancialLog {
   final String description;
   final double amount;
   final String type; // 'income' or 'expense'
-  final DateTime date;
   final String category;
-  final String? reference;
+  final DateTime date;
+  final String? notes;
 
   FinancialLog({
     required this.id,
     required this.description,
     required this.amount,
     required this.type,
-    required this.date,
     required this.category,
-    this.reference,
+    required this.date,
+    this.notes,
   });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'description': description,
-      'amount': amount,
-      'type': type,
-      'date': date.toIso8601String(),
-      'category': category,
-      'reference': reference,
-    };
-  }
 
   factory FinancialLog.fromJson(Map<String, dynamic> json) {
     return FinancialLog(
@@ -35,29 +23,21 @@ class FinancialLog {
       description: json['description'],
       amount: json['amount'].toDouble(),
       type: json['type'],
-      date: DateTime.parse(json['date']),
       category: json['category'],
-      reference: json['reference'],
+      date: DateTime.parse(json['date']),
+      notes: json['notes'],
     );
   }
 
-  FinancialLog copyWith({
-    String? id,
-    String? description,
-    double? amount,
-    String? type,
-    DateTime? date,
-    String? category,
-    String? reference,
-  }) {
-    return FinancialLog(
-      id: id ?? this.id,
-      description: description ?? this.description,
-      amount: amount ?? this.amount,
-      type: type ?? this.type,
-      date: date ?? this.date,
-      category: category ?? this.category,
-      reference: reference ?? this.reference,
-    );
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'description': description,
+      'amount': amount,
+      'type': type,
+      'category': category,
+      'date': date.toIso8601String(),
+      'notes': notes,
+    };
   }
 }

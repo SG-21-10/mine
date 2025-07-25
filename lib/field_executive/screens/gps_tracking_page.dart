@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import '../../constants/colors.dart';
+
+// Import the separate navigation pages
 import '../widgets/status_page.dart';
 import '../widgets/tasks_page.dart';
 import '../widgets/chat_page.dart';
@@ -121,11 +122,11 @@ class _GpsTrackingPageState extends State<GpsTrackingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundGray,
+      backgroundColor: const Color(0xFFEAF1F3),
       appBar: AppBar(
-        title: const Text('GPS Tracking'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFFA5C8D0),
+        title: const Text('Tracking', style: TextStyle(color: Colors.black)),
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -158,7 +159,7 @@ class _GpsTrackingPageState extends State<GpsTrackingPage> {
               leading: const Icon(Icons.location_on, color: Colors.blue, size: 30),
               title: const Text("Status"),
               subtitle: const Text("View status and latest location data"),
-              onTap: () => navigateTo("Status"),
+              onTap: () => navigateTo("Status_page"),
             ),
           ),
           const SizedBox(height: 16),
@@ -169,7 +170,7 @@ class _GpsTrackingPageState extends State<GpsTrackingPage> {
               leading: const Icon(Icons.task_alt, color: Colors.orange, size: 30),
               title: const Text("Tasks"),
               subtitle: const Text("Perform tasks"),
-              onTap: () => navigateTo("Tasks"),
+              onTap: () => navigateTo("Tasks_page"),
             ),
           ),
           const SizedBox(height: 16),
@@ -180,7 +181,7 @@ class _GpsTrackingPageState extends State<GpsTrackingPage> {
               leading: const Icon(Icons.chat_bubble, color: Colors.teal, size: 30),
               title: const Text("Chat"),
               subtitle: const Text("Communicate with main account"),
-              onTap: () => navigateTo("Chat"),
+              onTap: () => navigateTo("Chat_page"),
             ),
           ),
           const SizedBox(height: 16),
@@ -191,7 +192,7 @@ class _GpsTrackingPageState extends State<GpsTrackingPage> {
               leading: const Icon(Icons.camera_alt, color: Colors.purple, size: 30),
               title: const Text("Camera"),
               subtitle: const Text("Send photo with location"),
-              onTap: () => navigateTo("Camera"),
+              onTap: () => navigateTo("Camera_page"),
             ),
           ),
         ],

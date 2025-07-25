@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/financial_log.dart';
 import '../theme/app_theme.dart';
+import 'acc_home_screen.dart';
+import 'maintain_financial_log_screen.dart';
+import 'track_financial_logs_screen.dart';
+import 'generate_invoice_screen.dart';
+import 'send_invoice_screen.dart';
+import 'verify_payment_screen.dart';
 
 class FinancialLogsDisplayScreen extends StatelessWidget {
   final List<FinancialLog>? logs;
@@ -25,6 +31,7 @@ class FinancialLogsDisplayScreen extends StatelessWidget {
             ),
           ],
         ),
+        drawer: _buildNavigationDrawer(context),
         body: Container(
           color: AppTheme.backgroundColor,
           child: logs == null || logs!.isEmpty
@@ -120,6 +127,131 @@ class FinancialLogsDisplayScreen extends StatelessWidget {
                   ],
                 ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: AppTheme.primaryColor,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 30,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Accountant App',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.dashboard),
+            title: const Text('Dashboard'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AccountantHomeScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet),
+            title: const Text('Maintain Financial Logs'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MaintainFinancialLogScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.analytics),
+            title: const Text('Track Financial Logs'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TrackFinancialLogsScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.receipt_long),
+            title: const Text('Generate Invoice'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GenerateInvoiceScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send),
+            title: const Text('Send Invoice'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SendInvoiceScreen(),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.verified),
+            title: const Text('Verify Payment'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const VerifyPaymentScreen(),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
+            },
+          ),
+        ],
       ),
     );
   }

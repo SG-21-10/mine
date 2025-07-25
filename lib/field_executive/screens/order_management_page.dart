@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../constants/colors.dart';
+
+// Import your navigation target pages
 import '../widgets/PlaceOrderPage.dart';
 import '../widgets/GetProductDetailsPage.dart';
 import '../widgets/CheckStockPage.dart';
@@ -35,7 +36,7 @@ class OrderManagementPage extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 36, color: AppColors.accentBlue),
+            Icon(icon, size: 36, color: const Color(0xFFA5C8D0)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -56,10 +57,10 @@ class OrderManagementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundGray,
+      backgroundColor: const Color(0xFFEFF6F8),
       appBar: AppBar(
         title: const Text("Order Management", style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: const Color(0xFFA5C8D0),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
@@ -133,14 +134,14 @@ class OrderManagementPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: Colors.black12)),
-              color: AppColors.backgroundGray,
+              color: Color(0xFFEFF6F8),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: const [
-                Icon(Icons.menu, size: 30, color: AppColors.primaryBlue),
-                Icon(Icons.arrow_back, size: 30, color: AppColors.primaryBlue),
-                Icon(Icons.settings, size: 30, color: AppColors.primaryBlue),
+                Icon(Icons.menu, size: 30, color: Color(0xFFA5C8D0)),
+                Icon(Icons.arrow_back, size: 30, color: Color(0xFFA5C8D0)),
+                Icon(Icons.settings, size: 30, color: Color(0xFFA5C8D0)),
               ],
             ),
           ),

@@ -1,157 +1,159 @@
-import 'package:flutter/foundation.dart';
-import '../models/invoice.dart';
+import 'package:flutter/material.dart';
 import '../models/financial_log.dart';
+import '../models/invoice.dart';
 import '../services/accountant_service.dart';
 
 class AccountantProvider with ChangeNotifier {
   final AccountantService _service = AccountantService();
 
-  List<Invoice> get invoices => _service.getInvoices();
-  List<FinancialLog> get financialLogs => _service.getFinancialLogs();
+  List<FinancialLog> _financialLogs = [];
+  List<Invoice> _invoices = [];
+  bool _isLoading = false;
+  String? _error;
 
-  // Invoice methods
-  void addInvoice(Invoice invoice) {
-    _service.addInvoice(invoice);
-    notifyListeners();
-  }
+  List<FinancialLog> get financialLogs => _financialLogs;
+  List<Invoice> get invoices => _invoices;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  void updateInvoice(Invoice invoice) {
-    _service.updateInvoice(invoice);
-    notifyListeners();
-  }
-
-  void deleteInvoice(String invoiceId) {
-    _service.deleteInvoice(invoiceId);
-    notifyListeners();
-  }
-
-  Invoice? getInvoiceById(String id) {
-    return _service.getInvoiceById(id);
-  }
-
-  // Financial Log methods
-  void addFinancialLog(FinancialLog log) {
-    _service.addFinancialLog(log);
-    notifyListeners();
-  }
-
-  void updateFinancialLog(FinancialLog log) {
-    _service.updateFinancialLog(log);
-    notifyListeners();
-  }
-
-  void deleteFinancialLog(String logId) {
-    _service.deleteFinancialLog(logId);
-    notifyListeners();
-  }
-
-  FinancialLog? getFinancialLogById(String id) {
-    return _service.getFinancialLogById(id);
-  }
-
-  // Analytics
-  double get totalIncome => _service.getTotalIncome();
-  double get totalExpenses => _service.getTotalExpenses();
-  double get netProfit => _service.getNetProfit();
-  List<Invoice> get pendingInvoices => _service.getPendingInvoices();
-  double get totalOutstanding => _service.getTotalOutstanding();
-
-  // Load methods (for initialization)
-  void loadInvoices() {
-    // In a real app, this would load from a database or API
-    // For now, we'll add some sample data
-    if (invoices.isEmpty) {
-      _addSampleInvoices();
-    }
-    notifyListeners();
-  }
-
-  void loadFinancialLogs() {
-    // In a real app, this would load from a database or API
-    // For now, we'll add some sample data
-    if (financialLogs.isEmpty) {
-      _addSampleFinancialLogs();
-    }
-    notifyListeners();
-  }
-
-  void _addSampleInvoices() {
-    final sampleInvoices = [
-      Invoice(
-        id: '1',
-        customerName: 'John Doe',
-        customerEmail: 'john@example.com',
-        items: [
-          InvoiceItem(
-            description: 'Product A',
-            quantity: 2,
-            unitPrice: 100.0,
-            total: 200.0,
-          ),
-        ],
-        subtotal: 200.0,
-        tax: 20.0,
-        total: 220.0,
-        issueDate: DateTime.now().subtract(const Duration(days: 5)),
-        dueDate: DateTime.now().add(const Duration(days: 25)),
-        status: 'sent',
-      ),
-      Invoice(
-        id: '2',
-        customerName: 'Jane Smith',
-        customerEmail: 'jane@example.com',
-        items: [
-          InvoiceItem(
-            description: 'Service B',
-            quantity: 1,
-            unitPrice: 500.0,
-            total: 500.0,
-          ),
-        ],
-        subtotal: 500.0,
-        tax: 50.0,
-        total: 550.0,
-        issueDate: DateTime.now().subtract(const Duration(days: 10)),
-        dueDate: DateTime.now().add(const Duration(days: 20)),
-        status: 'paid',
-      ),
-    ];
-
-    for (final invoice in sampleInvoices) {
-      _service.addInvoice(invoice);
+  Future<void> loadFinancialLogs() async {
+    _setLoading(true);
+    try {
+      _financialLogs = await _service.getFinancialLogs();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
     }
   }
 
-  void _addSampleFinancialLogs() {
-    final sampleLogs = [
-      FinancialLog(
-        id: '1',
-        description: 'Sales Revenue',
-        amount: 1000.0,
-        type: 'income',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        category: 'Sales',
-      ),
-      FinancialLog(
-        id: '2',
-        description: 'Office Supplies',
-        amount: 150.0,
-        type: 'expense',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-        category: 'Office',
-      ),
-      FinancialLog(
-        id: '3',
-        description: 'Consulting Fee',
-        amount: 750.0,
-        type: 'income',
-        date: DateTime.now().subtract(const Duration(days: 3)),
-        category: 'Services',
-      ),
-    ];
-
-    for (final log in sampleLogs) {
-      _service.addFinancialLog(log);
+  Future<void> loadInvoices() async {
+    _setLoading(true);
+    try {
+      _invoices = await _service.getInvoices();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _setLoading(false);
     }
+  }
+
+  Future<void> addFinancialLog(FinancialLog log) async {
+    try {
+      await _service.addFinancialLog(log);
+      _financialLogs.add(log);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateFinancialLog(FinancialLog log) async {
+    try {
+      await _service.updateFinancialLog(log);
+      final index = _financialLogs.indexWhere((l) => l.id == log.id);
+      if (index != -1) {
+        _financialLogs[index] = log;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteFinancialLog(String id) async {
+    try {
+      await _service.deleteFinancialLog(id);
+      _financialLogs.removeWhere((log) => log.id == id);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> addInvoice(Invoice invoice) async {
+    try {
+      await _service.addInvoice(invoice);
+      _invoices.add(invoice);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateInvoice(Invoice invoice) async {
+    try {
+      await _service.updateInvoice(invoice);
+      final index = _invoices.indexWhere((i) => i.id == invoice.id);
+      if (index != -1) {
+        _invoices[index] = invoice;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteInvoice(String id) async {
+    try {
+      await _service.deleteInvoice(id);
+      _invoices.removeWhere((invoice) => invoice.id == id);
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> sendInvoice(String invoiceId, String email) async {
+    try {
+      // Find the invoice
+      final invoice = _invoices.firstWhere((inv) => inv.id == invoiceId);
+      
+      // Update the invoice status to 'sent'
+      invoice.status = 'sent';
+      
+      // Notify listeners about the change
+      notifyListeners();
+      
+      // In a real app, you would send the email here
+      await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+      
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> verifyPayment(String invoiceId) async {
+    try {
+      // Find the invoice
+      final index = _invoices.indexWhere((inv) => inv.id == invoiceId);
+      if (index != -1) {
+        // Update the invoice status to 'paid'
+        _invoices[index].status = 'paid';
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 }
