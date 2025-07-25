@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/accountant_provider.dart';
-import '../models/financial_log.dart';
 import '../theme/app_theme.dart';
 import 'financial_logs_display_screen.dart';
 import 'acc_home_screen.dart';
@@ -9,6 +8,7 @@ import 'maintain_financial_log_screen.dart';
 import 'generate_invoice_screen.dart';
 import 'send_invoice_screen.dart';
 import 'verify_payment_screen.dart';
+import 'preview_pdf_screen.dart';
 
 class TrackFinancialLogsScreen extends StatefulWidget {
   const TrackFinancialLogsScreen({Key? key}) : super(key: key);
@@ -18,10 +18,6 @@ class TrackFinancialLogsScreen extends StatefulWidget {
 }
 
 class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
-  String _selectedFilter = 'all';
-  String _selectedCategory = 'all';
-  DateTimeRange? _selectedDateRange;
-
   @override
   void initState() {
     super.initState();
@@ -38,155 +34,59 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
         appBar: AppBar(
           title: const Text('Track Financial Logs'),
           backgroundColor: AppTheme.primaryColor,
-          actions: [
-            IconButton(
-              onPressed: _showFilterDialog,
-              icon: const Icon(Icons.filter_list),
-            ),
-          ],
         ),
         drawer: _buildNavigationDrawer(context),
         body: Container(
           color: AppTheme.backgroundColor,
-          child: Column(
-            children: [
-              _buildFilterChips(),
-              Expanded(
-                child: Consumer<AccountantProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.isLoading) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.primaryColor,
-                        ),
-                      );
-                    }
+          child: Consumer<AccountantProvider>(
+            builder: (context, provider, child) {
+              if (provider.isLoading) {
+                return const Center(
+                  child: CircularProgressIndicator(color: AppTheme.primaryColor),
+                );
+              }
 
-                    if (provider.error != null) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error: ${provider.error}',
-                              style: const TextStyle(
-                                color: AppTheme.textColor,
-                                fontSize: 16,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => provider.loadFinancialLogs(),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+              if (provider.error != null) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: AppTheme.accentColor.withOpacity(0.6),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error: ${provider.error}',
+                        style: const TextStyle(color: AppTheme.textColor),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => provider.loadFinancialLogs(),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
 
-                    final filteredLogs = _getFilteredLogs(provider.financialLogs);
-
-                    return Column(
-                      children: [
-                        _buildSummaryCards(filteredLogs),
-                        Expanded(
-                          child: filteredLogs.isEmpty
-                              ? const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.search_off,
-                                        size: 64,
-                                        color: AppTheme.secondaryColor,
-                                      ),
-                                      SizedBox(height: 16),
-                                      Text(
-                                        'No logs match your filters',
-                                        style: TextStyle(
-                                          color: AppTheme.textColor,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: filteredLogs.length,
-                                  itemBuilder: (context, index) {
-                                    final log = filteredLogs[index];
-                                    return Card(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      child: ListTile(
-                                        leading: CircleAvatar(
-                                          backgroundColor: log.type == 'income' 
-                                              ? Colors.green[100] 
-                                              : Colors.red[100],
-                                          child: Icon(
-                                            log.type == 'income' 
-                                                ? Icons.arrow_upward 
-                                                : Icons.arrow_downward,
-                                            color: log.type == 'income' 
-                                                ? Colors.green[700] 
-                                                : Colors.red[700],
-                                          ),
-                                        ),
-                                        title: Text(
-                                          log.description,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppTheme.textColor,
-                                          ),
-                                        ),
-                                        subtitle: Text(
-                                          '${log.category} • ${log.date.day}/${log.date.month}/${log.date.year}',
-                                          style: const TextStyle(color: AppTheme.textColor),
-                                        ),
-                                        trailing: Text(
-                                          '${log.type == 'income' ? '+' : '-'}\$${log.amount.toStringAsFixed(2)}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: log.type == 'income' 
-                                                ? Colors.green[700] 
-                                                : Colors.red[700],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    );
-                  },
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSummaryCards(provider),
+                    const SizedBox(height: 24),
+                    _buildCategoryBreakdown(provider),
+                    const SizedBox(height: 24),
+                    _buildActionButtons(),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            final provider = context.read<AccountantProvider>();
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => FinancialLogsDisplayScreen(
-                  logs: _getFilteredLogs(provider.financialLogs),
-                ),
-              ),
-            );
-          },
-          backgroundColor: AppTheme.primaryColor,
-          child: const Icon(Icons.visibility, color: Colors.white),
         ),
       ),
     );
@@ -226,8 +126,8 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -239,8 +139,8 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -252,15 +152,15 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -272,8 +172,16 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.preview, color: AppTheme.accentColor),
+            title: const Text('Preview PDF', style: TextStyle(color: AppTheme.textColor)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPreviewPdfDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -285,8 +193,8 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -299,8 +207,8 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: AppTheme.accentColor),
+            title: const Text('Sign Out', style: TextStyle(color: AppTheme.accentColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
@@ -311,224 +219,271 @@ class _TrackFinancialLogsScreenState extends State<TrackFinancialLogsScreen> {
     );
   }
 
-  Widget _buildFilterChips() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        spacing: 8,
-        children: [
-          FilterChip(
-            label: const Text('All'),
-            selected: _selectedFilter == 'all',
-            onSelected: (selected) {
-              setState(() {
-                _selectedFilter = 'all';
-              });
-            },
-          ),
-          FilterChip(
-            label: const Text('Income'),
-            selected: _selectedFilter == 'income',
-            onSelected: (selected) {
-              setState(() {
-                _selectedFilter = 'income';
-              });
-            },
-          ),
-          FilterChip(
-            label: const Text('Expenses'),
-            selected: _selectedFilter == 'expense',
-            onSelected: (selected) {
-              setState(() {
-                _selectedFilter = 'expense';
-              });
-            },
-          ),
-          if (_selectedDateRange != null)
-            FilterChip(
-              label: Text('${_selectedDateRange!.start.day}/${_selectedDateRange!.start.month} - ${_selectedDateRange!.end.day}/${_selectedDateRange!.end.month}'),
-              selected: true,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedDateRange = null;
-                });
-              },
-            ),
-        ],
-      ),
-    );
-  }
+  void _showPreviewPdfDialog(BuildContext context) {
+    final provider = context.read<AccountantProvider>();
+    final availableInvoices = provider.invoices;
 
-  Widget _buildSummaryCards(List<FinancialLog> logs) {
-    final totalIncome = logs
-        .where((log) => log.type == 'income')
-        .fold(0.0, (sum, log) => sum + log.amount);
-    
-    final totalExpenses = logs
-        .where((log) => log.type == 'expense')
-        .fold(0.0, (sum, log) => sum + log.amount);
-    
-    final netAmount = totalIncome - totalExpenses;
+    if (availableInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No invoices available to preview'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+      return;
+    }
 
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: Card(
-              color: Colors.green[50],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Icon(Icons.trending_up, color: Colors.green, size: 32),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${totalIncome.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
-                      ),
-                    ),
-                    const Text('Income', style: TextStyle(color: Colors.green)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Card(
-              color: Colors.red[50],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    const Icon(Icons.trending_down, color: Colors.red, size: 32),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${totalExpenses.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                    const Text('Expenses', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Card(
-              color: netAmount >= 0 ? Colors.blue[50] : Colors.orange[50],
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Icon(
-                      netAmount >= 0 ? Icons.account_balance : Icons.warning,
-                      color: netAmount >= 0 ? Colors.blue : Colors.orange,
-                      size: 32,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${netAmount.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: netAmount >= 0 ? Colors.blue : Colors.orange,
-                      ),
-                    ),
-                    Text(
-                      'Net',
-                      style: TextStyle(
-                        color: netAmount >= 0 ? Colors.blue : Colors.orange,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Filter Options'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('Select Date Range'),
-              trailing: const Icon(Icons.date_range),
-              onTap: () async {
-                Navigator.pop(context);
-                final DateTimeRange? picked = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                  initialDateRange: _selectedDateRange,
-                );
-                if (picked != null) {
-                  setState(() {
-                    _selectedDateRange = picked;
-                  });
-                }
-              },
-            ),
-            if (_selectedDateRange != null)
-              ListTile(
-                title: const Text('Clear Date Filter'),
-                trailing: const Icon(Icons.clear),
+        title: const Text('Select Invoice to Preview'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableInvoices.length,
+            itemBuilder: (context, index) {
+              final invoice = availableInvoices[index];
+              return ListTile(
+                title: Text(invoice.clientName),
+                subtitle: Text('\$${invoice.amount.toStringAsFixed(2)}'),
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() {
-                    _selectedDateRange = null;
-                  });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PreviewPdfScreen(invoice: invoice),
+                    ),
+                  );
                 },
-              ),
-          ],
+              );
+            },
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
     );
   }
 
-  List<FinancialLog> _getFilteredLogs(List<FinancialLog> logs) {
-    var filtered = logs.where((log) {
-      // Filter by type
-      if (_selectedFilter != 'all' && log.type != _selectedFilter) {
-        return false;
-      }
+  Widget _buildSummaryCards(AccountantProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Financial Summary',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                'Total Income',
+                '\$${provider.totalIncome.toStringAsFixed(2)}',
+                Icons.trending_up,
+                AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryCard(
+                'Total Expenses',
+                '\$${provider.totalExpenses.toStringAsFixed(2)}',
+                Icons.trending_down,
+                AppTheme.accentColor,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildSummaryCard(
+          'Net Profit/Loss',
+          '\$${provider.netProfit.toStringAsFixed(2)}',
+          provider.netProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+          provider.netProfit >= 0 ? AppTheme.primaryColor : AppTheme.accentColor,
+        ),
+      ],
+    );
+  }
 
-      // Filter by date range
-      if (_selectedDateRange != null) {
-        if (log.date.isBefore(_selectedDateRange!.start) ||
-            log.date.isAfter(_selectedDateRange!.end)) {
-          return false;
-        }
-      }
+  Widget _buildSummaryCard(String title, String amount, IconData icon, Color color) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 24),
+                Text(
+                  amount,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.textColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-      return true;
-    }).toList();
-
-    // Sort by date (newest first)
-    filtered.sort((a, b) => b.date.compareTo(a.date));
+  Widget _buildCategoryBreakdown(AccountantProvider provider) {
+    final categoryTotals = <String, double>{};
     
-    return filtered;
+    for (final log in provider.financialLogs) {
+      categoryTotals[log.category] = (categoryTotals[log.category] ?? 0) + log.amount;
+    }
+
+    final sortedCategories = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Category Breakdown',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (sortedCategories.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: Column(
+                  children: const [
+                    Icon(
+                      Icons.category,
+                      size: 48,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'No categories yet',
+                      style: TextStyle(color: AppTheme.textColor),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          ...sortedCategories.take(5).map((entry) => Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: AppTheme.primaryColor,
+                child: Text(
+                  entry.key[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              title: Text(
+                entry.key,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              trailing: Text(
+                '\$${entry.value.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          )).toList(),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Actions',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FinancialLogsDisplayScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.list),
+            label: const Text('View All Logs'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MaintainFinancialLogScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add New Log'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

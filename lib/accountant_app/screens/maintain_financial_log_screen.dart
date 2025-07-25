@@ -8,6 +8,7 @@ import 'track_financial_logs_screen.dart';
 import 'generate_invoice_screen.dart';
 import 'send_invoice_screen.dart';
 import 'verify_payment_screen.dart';
+import 'preview_pdf_screen.dart';
 
 class MaintainFinancialLogScreen extends StatefulWidget {
   const MaintainFinancialLogScreen({Key? key}) : super(key: key);
@@ -119,8 +120,8 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -132,15 +133,15 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -152,8 +153,8 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -165,8 +166,16 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.preview, color: AppTheme.accentColor),
+            title: const Text('Preview PDF', style: TextStyle(color: AppTheme.textColor)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPreviewPdfDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -178,8 +187,8 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -192,12 +201,63 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: AppTheme.accentColor),
+            title: const Text('Sign Out', style: TextStyle(color: AppTheme.accentColor)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPreviewPdfDialog(BuildContext context) {
+    final provider = context.read<AccountantProvider>();
+    final availableInvoices = provider.invoices;
+
+    if (availableInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No invoices available to preview'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Invoice to Preview'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableInvoices.length,
+            itemBuilder: (context, index) {
+              final invoice = availableInvoices[index];
+              return ListTile(
+                title: Text(invoice.clientName),
+                subtitle: Text('\$${invoice.amount.toStringAsFixed(2)}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PreviewPdfScreen(invoice: invoice),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -231,12 +291,12 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                         value: _selectedType,
                         decoration: const InputDecoration(
                           labelText: 'Type',
-                          prefixIcon: Icon(Icons.category),
+                          prefixIcon: Icon(Icons.category, color: AppTheme.accentColor),
                         ),
                         items: _types.map((type) {
                           return DropdownMenuItem(
                             value: type,
-                            child: Text(type.toUpperCase()),
+                            child: Text(type.toUpperCase(), style: const TextStyle(color: AppTheme.textColor)),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -252,12 +312,12 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                         value: _selectedCategory,
                         decoration: const InputDecoration(
                           labelText: 'Category',
-                          prefixIcon: Icon(Icons.label),
+                          prefixIcon: Icon(Icons.label, color: AppTheme.accentColor),
                         ),
                         items: _categories.map((category) {
                           return DropdownMenuItem(
                             value: category,
-                            child: Text(category),
+                            child: Text(category, style: const TextStyle(color: AppTheme.textColor)),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -274,7 +334,7 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                   controller: _descriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description',
-                    prefixIcon: Icon(Icons.description),
+                    prefixIcon: Icon(Icons.description, color: AppTheme.accentColor),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -291,7 +351,7 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                         controller: _amountController,
                         decoration: const InputDecoration(
                           labelText: 'Amount',
-                          prefixIcon: Icon(Icons.attach_money),
+                          prefixIcon: Icon(Icons.attach_money, color: AppTheme.accentColor),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
@@ -308,9 +368,12 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                     const SizedBox(width: 16),
                     Expanded(
                       child: ListTile(
-                        title: const Text('Date'),
-                        subtitle: Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
-                        leading: const Icon(Icons.calendar_today),
+                        title: const Text('Date', style: TextStyle(color: AppTheme.textColor)),
+                        subtitle: Text(
+                          '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                          style: const TextStyle(color: AppTheme.textColor),
+                        ),
+                        leading: const Icon(Icons.calendar_today, color: AppTheme.accentColor),
                         onTap: () => _selectDate(context),
                       ),
                     ),
@@ -321,7 +384,7 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                   controller: _notesController,
                   decoration: const InputDecoration(
                     labelText: 'Notes (Optional)',
-                    prefixIcon: Icon(Icons.note),
+                    prefixIcon: Icon(Icons.note, color: AppTheme.accentColor),
                   ),
                   maxLines: 2,
                 ),
@@ -358,7 +421,7 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                 Icon(
                   Icons.error_outline,
                   size: 64,
-                  color: Colors.red[400],
+                  color: AppTheme.accentColor.withOpacity(0.6),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -439,15 +502,15 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: log.type == 'income' 
-                            ? Colors.green[100] 
-                            : Colors.red[100],
+                            ? AppTheme.primaryLight 
+                            : AppTheme.accentLight,
                         child: Icon(
                           log.type == 'income' 
                               ? Icons.arrow_upward 
                               : Icons.arrow_downward,
                           color: log.type == 'income' 
-                              ? Colors.green[700] 
-                              : Colors.red[700],
+                              ? AppTheme.primaryColor 
+                              : AppTheme.accentColor,
                         ),
                       ),
                       title: Text(
@@ -469,13 +532,13 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: log.type == 'income' 
-                                  ? Colors.green[700] 
-                                  : Colors.red[700],
+                                  ? AppTheme.primaryColor 
+                                  : AppTheme.accentColor,
                             ),
                           ),
                           IconButton(
                             onPressed: () => _deleteLog(log.id),
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete, color: AppTheme.accentColor),
                           ),
                         ],
                       ),
@@ -531,7 +594,7 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Financial log added successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.accentColor,
         ),
       );
     }
@@ -555,11 +618,11 @@ class _MaintainFinancialLogScreenState extends State<MaintainFinancialLogScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Financial log deleted successfully!'),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppTheme.accentColor,
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentColor),
             child: const Text('Delete'),
           ),
         ],

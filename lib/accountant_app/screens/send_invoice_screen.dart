@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/invoice.dart';
 import '../providers/accountant_provider.dart';
 import '../theme/app_theme.dart';
 import 'acc_home_screen.dart';
@@ -8,6 +7,7 @@ import 'maintain_financial_log_screen.dart';
 import 'track_financial_logs_screen.dart';
 import 'generate_invoice_screen.dart';
 import 'verify_payment_screen.dart';
+import 'preview_pdf_screen.dart';
 
 class SendInvoiceScreen extends StatefulWidget {
   const SendInvoiceScreen({Key? key}) : super(key: key);
@@ -18,10 +18,7 @@ class SendInvoiceScreen extends StatefulWidget {
 
 class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
   final _emailController = TextEditingController();
-  final _subjectController = TextEditingController();
-  final _messageController = TextEditingController();
-  Invoice? _selectedInvoice;
-  bool _isLoading = false;
+  String? _selectedInvoiceId;
 
   @override
   void initState() {
@@ -34,8 +31,6 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _subjectController.dispose();
-    _messageController.dispose();
     super.dispose();
   }
 
@@ -56,15 +51,9 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInvoiceSelection(),
+                _buildSendInvoiceForm(),
                 const SizedBox(height: 24),
-                if (_selectedInvoice != null) ...[
-                  _buildInvoicePreview(),
-                  const SizedBox(height: 24),
-                  _buildEmailForm(),
-                  const SizedBox(height: 32),
-                  _buildSendButton(),
-                ],
+                _buildInvoicesList(),
               ],
             ),
           ),
@@ -107,8 +96,8 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -120,8 +109,8 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -133,8 +122,8 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -146,8 +135,8 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -159,15 +148,23 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.preview, color: AppTheme.accentColor),
+            title: const Text('Preview PDF', style: TextStyle(color: AppTheme.textColor)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPreviewPdfDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -180,11 +177,11 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: AppTheme.accentColor),
+            title: const Text('Sign Out', style: TextStyle(color: AppTheme.accentColor)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
             },
           ),
         ],
@@ -192,7 +189,58 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
     );
   }
 
-  Widget _buildInvoiceSelection() {
+  void _showPreviewPdfDialog(BuildContext context) {
+    final provider = context.read<AccountantProvider>();
+    final availableInvoices = provider.invoices;
+
+    if (availableInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No invoices available to preview'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Invoice to Preview'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableInvoices.length,
+            itemBuilder: (context, index) {
+              final invoice = availableInvoices[index];
+              return ListTile(
+                title: Text(invoice.clientName),
+                subtitle: Text('\$${invoice.amount.toStringAsFixed(2)}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PreviewPdfScreen(invoice: invoice),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSendInvoiceForm() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -200,7 +248,7 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Select Invoice to Send',
+              'Send Invoice',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -210,216 +258,75 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
             const SizedBox(height: 16),
             Consumer<AccountantProvider>(
               builder: (context, provider, child) {
-                if (provider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppTheme.primaryColor),
-                  );
-                }
-
-                final draftInvoices = provider.invoices
+                final availableInvoices = provider.invoices
                     .where((invoice) => invoice.status == 'draft')
                     .toList();
 
-                if (draftInvoices.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
+                if (availableInvoices.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
                       child: Text(
                         'No draft invoices available to send',
-                        style: TextStyle(
-                          color: AppTheme.textColor,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: AppTheme.textColor),
                       ),
                     ),
                   );
                 }
 
-                return DropdownButtonFormField<Invoice>(
-                  value: _selectedInvoice,
+                return DropdownButtonFormField<String>(
+                  value: _selectedInvoiceId,
                   decoration: const InputDecoration(
-                    labelText: 'Choose Invoice',
-                    prefixIcon: Icon(Icons.receipt),
+                    labelText: 'Select Invoice',
+                    prefixIcon: Icon(Icons.receipt, color: AppTheme.accentColor),
                   ),
-                  items: draftInvoices.map((invoice) {
+                  items: availableInvoices.map((invoice) {
                     return DropdownMenuItem(
-                      value: invoice,
+                      value: invoice.id,
                       child: Text(
-                        '${invoice.clientName} - \$${invoice.totalAmount.toStringAsFixed(2)}',
+                        '${invoice.clientName} - \$${invoice.amount.toStringAsFixed(2)}',
+                        style: const TextStyle(color: AppTheme.textColor),
                       ),
                     );
                   }).toList(),
-                  onChanged: (invoice) {
+                  onChanged: (value) {
                     setState(() {
-                      _selectedInvoice = invoice;
-                      if (invoice != null) {
-                        _emailController.text = invoice.clientEmail;
-                        _subjectController.text = 'Invoice from Your Company';
-                        _messageController.text = _getDefaultMessage(invoice);
+                      _selectedInvoiceId = value;
+                      if (value != null) {
+                        final selectedInvoice = availableInvoices
+                            .firstWhere((invoice) => invoice.id == value);
+                        _emailController.text = selectedInvoice.clientEmail;
                       }
                     });
                   },
                 );
               },
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInvoicePreview() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Invoice Preview',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Client: ${_selectedInvoice!.clientName}',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Email: ${_selectedInvoice!.clientEmail}'),
-                      const SizedBox(height: 4),
-                      Text('Issue Date: ${_selectedInvoice!.issueDate.day}/${_selectedInvoice!.issueDate.month}/${_selectedInvoice!.issueDate.year}'),
-                      const SizedBox(height: 4),
-                      Text('Due Date: ${_selectedInvoice!.dueDate.day}/${_selectedInvoice!.dueDate.month}/${_selectedInvoice!.dueDate.year}'),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(_selectedInvoice!.status),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        _selectedInvoice!.status.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${_selectedInvoice!.totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Items:',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            ...(_selectedInvoice!.items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text('${item.description} (${item.quantity}x)'),
-                  ),
-                  Text('\$${item.totalAmount.toStringAsFixed(2)}'),
-                ]),
-              ),
-            )),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmailForm() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Email Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _emailController,
               decoration: const InputDecoration(
-                labelText: 'Recipient Email',
-                prefixIcon: Icon(Icons.email),
+                labelText: 'Email Address',
+                prefixIcon: Icon(Icons.email, color: AppTheme.accentColor),
               ),
               keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter recipient email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _subjectController,
-              decoration: const InputDecoration(
-                labelText: 'Subject',
-                prefixIcon: Icon(Icons.subject),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _selectedInvoiceId != null ? _sendInvoice : null,
+                icon: const Icon(Icons.send),
+                label: const Text('Send Invoice'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter email subject';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                labelText: 'Message',
-                prefixIcon: Icon(Icons.message),
-                hintText: 'Enter your message here...',
-              ),
-              maxLines: 5,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a message';
-                }
-                return null;
-              },
             ),
           ],
         ),
@@ -427,128 +334,175 @@ class _SendInvoiceScreenState extends State<SendInvoiceScreen> {
     );
   }
 
-  Widget _buildSendButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _sendInvoice,
-        icon: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+  Widget _buildInvoicesList() {
+    return Consumer<AccountantProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.primaryColor),
+          );
+        }
+
+        if (provider.error != null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppTheme.accentColor.withOpacity(0.6),
                 ),
-              )
-            : const Icon(Icons.send),
-        label: Text(_isLoading ? 'Sending...' : 'Send Invoice'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-        ),
-      ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: ${provider.error}',
+                  style: const TextStyle(color: AppTheme.textColor),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.loadInvoices(),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (provider.invoices.isEmpty) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Center(
+                child: Column(
+                  children: const [
+                    Icon(
+                      Icons.receipt_long,
+                      size: 64,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No invoices yet',
+                      style: TextStyle(
+                        color: AppTheme.textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Generate your first invoice',
+                      style: TextStyle(color: AppTheme.textColor),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'All Invoices',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: provider.invoices.length,
+              itemBuilder: (context, index) {
+                final invoice = provider.invoices[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: _getStatusColor(invoice.status),
+                      child: Icon(
+                        _getStatusIcon(invoice.status),
+                        color: Colors.white,
+                      ),
+                    ),
+                    title: Text(
+                      invoice.clientName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${invoice.status.toUpperCase()} • \$${invoice.amount.toStringAsFixed(2)}',
+                      style: const TextStyle(color: AppTheme.textColor),
+                    ),
+                    trailing: Text(
+                      '${invoice.createdDate.day}/${invoice.createdDate.month}/${invoice.createdDate.year}',
+                      style: const TextStyle(color: AppTheme.textColor),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    switch (status) {
       case 'draft':
-        return Colors.grey;
+        return AppTheme.secondaryColor;
       case 'sent':
-        return Colors.blue;
+        return AppTheme.primaryColor;
       case 'paid':
-        return Colors.green;
+        return AppTheme.accentColor;
       case 'overdue':
-        return Colors.red;
+        return AppTheme.accentColor.withOpacity(0.8);
       default:
-        return Colors.grey;
+        return AppTheme.secondaryColor;
     }
   }
 
-  String _getDefaultMessage(Invoice invoice) {
-    return '''Dear ${invoice.clientName},
-
-I hope this email finds you well. Please find attached your invoice for the services/products provided.
-
-Invoice Details:
-- Invoice Date: ${invoice.issueDate.day}/${invoice.issueDate.month}/${invoice.issueDate.year}
-- Due Date: ${invoice.dueDate.day}/${invoice.dueDate.month}/${invoice.dueDate.year}
-- Total Amount: \$${invoice.totalAmount.toStringAsFixed(2)}
-
-Please review the invoice and let me know if you have any questions. Payment is due by the due date mentioned above.
-
-Thank you for your business!
-
-Best regards,
-Your Company Name''';
+  IconData _getStatusIcon(String status) {
+    switch (status) {
+      case 'draft':
+        return Icons.edit;
+      case 'sent':
+        return Icons.send;
+      case 'paid':
+        return Icons.check_circle;
+      case 'overdue':
+        return Icons.warning;
+      default:
+        return Icons.receipt;
+    }
   }
 
-  Future<void> _sendInvoice() async {
-    if (_selectedInvoice == null) {
+  void _sendInvoice() {
+    if (_selectedInvoiceId != null && _emailController.text.isNotEmpty) {
+      context.read<AccountantProvider>().sendInvoice(
+        _selectedInvoiceId!,
+        _emailController.text.trim(),
+      );
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select an invoice to send'),
-          backgroundColor: Colors.red,
+          content: Text('Invoice sent successfully!'),
+          backgroundColor: AppTheme.accentColor,
         ),
       );
-      return;
-    }
 
-    if (_emailController.text.isEmpty || _subjectController.text.isEmpty || _messageController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all email fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final provider = context.read<AccountantProvider>();
-      final success = await provider.sendInvoice(_selectedInvoice!.id, _emailController.text);
-
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Invoice sent successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send invoice. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _selectedInvoiceId = null;
+        _emailController.clear();
+      });
     }
   }
 }

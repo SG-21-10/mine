@@ -8,7 +8,7 @@ import '../../admin/screens/admin_drawer.dart';
 import '../../external_seller/screens/seller_drawer.dart';
 import '../../worker/screens/worker_drawer.dart';
 import '../../field_executive/screens/executiveUI.dart';
-import '../../distributor /screens/distributorsUI.dart';
+import '../../distributor/screens/distributorsUI.dart';
 import '../../accountant_app/screens/acc_home_screen.dart';
 
 class SignUpPage extends StatefulWidget {

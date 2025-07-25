@@ -7,7 +7,7 @@ import '../config/app_theme.dart';
 import '../../admin/screens/admin_drawer.dart';
 import '../../external_seller/screens/seller_drawer.dart';
 import '../../worker/screens/worker_drawer.dart';
-import '../../distributor /screens/distributorsUI.dart';
+import '../../distributor/screens/distributorsUI.dart';
 import '../../field_executive/screens/executiveUI.dart';
 import '../../accountant_app/screens/acc_home_screen.dart';
 

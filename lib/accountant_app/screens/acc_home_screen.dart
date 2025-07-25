@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../screens/maintain_financial_log_screen.dart';
 import '../providers/accountant_provider.dart';
 import '../theme/app_theme.dart';
-import '../screens/track_financial_logs_screen.dart';
-import '../screens/generate_invoice_screen.dart';
-import '../screens/send_invoice_screen.dart';
-import '../screens/verify_payment_screen.dart';
+import 'maintain_financial_log_screen.dart';
+import 'track_financial_logs_screen.dart';
+import 'generate_invoice_screen.dart';
+import 'send_invoice_screen.dart';
+import 'verify_payment_screen.dart';
+import 'preview_pdf_screen.dart';
+import '../models/invoice.dart';
 
 class AccountantHomeScreen extends StatefulWidget {
   const AccountantHomeScreen({Key? key}) : super(key: key);
@@ -20,9 +22,8 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<AccountantProvider>();
-      provider.loadFinancialLogs();
-      provider.loadInvoices();
+      context.read<AccountantProvider>().loadFinancialLogs();
+      context.read<AccountantProvider>().loadInvoices();
     });
   }
 
@@ -34,12 +35,6 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
         appBar: AppBar(
           title: const Text('Accountant Dashboard'),
           backgroundColor: AppTheme.primaryColor,
-          actions: [
-            IconButton(
-              onPressed: () => _showProfileMenu(context),
-              icon: const Icon(Icons.account_circle),
-            ),
-          ],
         ),
         drawer: _buildNavigationDrawer(context),
         body: Container(
@@ -50,11 +45,11 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildWelcomeCard(),
-                const SizedBox(height: 24),
-                _buildQuickStats(),
-                const SizedBox(height: 24),
-                _buildMainFeatures(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
+                _buildFinancialOverview(),
+                const SizedBox(height: 20),
+                _buildQuickActions(),
+                const SizedBox(height: 20),
                 _buildRecentActivity(),
               ],
             ),
@@ -94,32 +89,19 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  'Manage your finances',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AccountantHomeScreen(),
-                ),
-              );
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -131,8 +113,8 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -144,8 +126,8 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -157,8 +139,16 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.preview, color: AppTheme.accentColor),
+            title: const Text('Preview PDF', style: TextStyle(color: AppTheme.textColor)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPreviewPdfDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -170,8 +160,8 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -184,12 +174,63 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: AppTheme.accentColor),
+            title: const Text('Sign Out', style: TextStyle(color: AppTheme.accentColor)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPreviewPdfDialog(BuildContext context) {
+    final provider = context.read<AccountantProvider>();
+    final availableInvoices = provider.invoices;
+
+    if (availableInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No invoices available to preview'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Invoice to Preview'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableInvoices.length,
+            itemBuilder: (context, index) {
+              final invoice = availableInvoices[index];
+              return ListTile(
+                title: Text(invoice.clientName),
+                subtitle: Text('\$${invoice.amount.toStringAsFixed(2)}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PreviewPdfScreen(invoice: invoice),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -200,7 +241,7 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
     return Card(
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           gradient: LinearGradient(
@@ -209,9 +250,9 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: const Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          children: const [
             Text(
               'Welcome Back!',
               style: TextStyle(
@@ -222,7 +263,7 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'Manage your financial records and invoices',
+              'Manage your finances efficiently',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.white70,
@@ -234,44 +275,63 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildFinancialOverview() {
     return Consumer<AccountantProvider>(
       builder: (context, provider, child) {
-        final totalIncome = provider.financialLogs
-            .where((log) => log.type == 'income')
-            .fold(0.0, (sum, log) => sum + log.amount);
-
-        final totalExpenses = provider.financialLogs
-            .where((log) => log.type == 'expense')
-            .fold(0.0, (sum, log) => sum + log.amount);
-
-        // Use these variables in the UI
-        final pendingInvoicesCount = provider.invoices
-            .where((invoice) => invoice.status == 'sent')
-            .length;
-
-        final paidInvoicesCount = provider.invoices
-            .where((invoice) => invoice.status == 'paid')
-            .length;
-
-        return Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildStatCard(
-                'Total Income',
-                '\$${totalIncome.toStringAsFixed(2)}',
-                Icons.trending_up,
-                Colors.green,
+            const Text(
+              'Financial Overview',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textColor,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'Total Expenses',
-                '\$${totalExpenses.toStringAsFixed(2)}',
-                Icons.trending_down,
-                Colors.red,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Total Income',
+                    '\$${provider.totalIncome.toStringAsFixed(2)}',
+                    Icons.trending_up,
+                    AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Total Expenses',
+                    '\$${provider.totalExpenses.toStringAsFixed(2)}',
+                    Icons.trending_down,
+                    AppTheme.accentColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Net Profit',
+                    '\$${provider.netProfit.toStringAsFixed(2)}',
+                    Icons.account_balance,
+                    provider.netProfit >= 0 ? AppTheme.primaryColor : AppTheme.accentColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildOverviewCard(
+                    'Pending Invoices',
+                    '\$${provider.pendingInvoicesAmount.toStringAsFixed(2)}',
+                    Icons.pending_actions,
+                    AppTheme.secondaryColor,
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -279,29 +339,34 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildOverviewCard(String title, String amount, IconData icon, Color color) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, color: color, size: 24),
+                Text(
+                  amount,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
             Text(
               title,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 color: AppTheme.textColor,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -309,29 +374,30 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
     );
   }
 
-  Widget _buildMainFeatures() {
+  Widget _buildQuickActions() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Main Features',
+          'Quick Actions',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textColor,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         GridView.count(
-          crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
+          childAspectRatio: 1.5,
           children: [
-            _buildFeatureCard(
-              'Maintain Financial Logs',
-              Icons.account_balance_wallet,
+            _buildActionCard(
+              'Add Financial Log',
+              Icons.add_circle,
               AppTheme.primaryColor,
               () => Navigator.push(
                 context,
@@ -340,21 +406,10 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
                 ),
               ),
             ),
-            _buildFeatureCard(
-              'Track Financial Logs',
-              Icons.analytics,
-              Colors.blue,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TrackFinancialLogsScreen(),
-                ),
-              ),
-            ),
-            _buildFeatureCard(
+            _buildActionCard(
               'Generate Invoice',
               Icons.receipt_long,
-              Colors.green,
+              AppTheme.secondaryColor,
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -362,10 +417,21 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
                 ),
               ),
             ),
-            _buildFeatureCard(
+            _buildActionCard(
+              'Track Finances',
+              Icons.analytics,
+              AppTheme.accentColor,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TrackFinancialLogsScreen(),
+                ),
+              ),
+            ),
+            _buildActionCard(
               'Send Invoice',
               Icons.send,
-              Colors.orange,
+              AppTheme.primaryDark,
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -373,30 +439,13 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
                 ),
               ),
             ),
-            _buildFeatureCard(
-              'Verify Payment',
-              Icons.verified,
-              Colors.purple,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const VerifyPaymentScreen(),
-                ),
-              ),
-            ),
-            _buildFeatureCard(
-              'Reports',
-              Icons.bar_chart,
-              Colors.teal,
-              () => _showComingSoon(context),
-            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildFeatureCard(String title, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -406,16 +455,16 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 40),
-              const SizedBox(height: 12),
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textColor,
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -428,8 +477,7 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
     return Consumer<AccountantProvider>(
       builder: (context, provider, child) {
         final recentLogs = provider.financialLogs.take(5).toList();
-        final recentInvoices = provider.invoices.take(3).toList();
-
+        
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -441,179 +489,71 @@ class _AccountantHomeScreenState extends State<AccountantHomeScreen> {
                 color: AppTheme.textColor,
               ),
             ),
-            const SizedBox(height: 16),
-            if (recentLogs.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            if (recentLogs.isEmpty)
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recent Financial Logs',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Column(
+                      children: const [
+                        Icon(
+                          Icons.inbox,
+                          size: 48,
+                          color: AppTheme.secondaryColor,
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...recentLogs.map((log) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              log.type == 'income' ? Icons.arrow_upward : Icons.arrow_downward,
-                              color: log.type == 'income' ? Colors.green : Colors.red,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                log.description,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            Text(
-                              '${log.type == 'income' ? '+' : '-'}\$${log.amount.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: log.type == 'income' ? Colors.green : Colors.red,
-                              ),
-                            ),
-                          ],
+                        SizedBox(height: 8),
+                        Text(
+                          'No recent activity',
+                          style: TextStyle(color: AppTheme.textColor),
                         ),
-                      )),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (recentInvoices.isNotEmpty) ...[
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recent Invoices',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ...recentInvoices.map((invoice) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(invoice.status),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                invoice.status.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                invoice.clientName,
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                            Text(
-                              '\$${invoice.totalAmount.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                    ],
+              )
+            else
+              ...recentLogs.map((log) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: log.type == 'income' 
+                        ? AppTheme.primaryLight 
+                        : AppTheme.accentLight,
+                    child: Icon(
+                      log.type == 'income' 
+                          ? Icons.arrow_upward 
+                          : Icons.arrow_downward,
+                      color: log.type == 'income' 
+                          ? AppTheme.primaryColor 
+                          : AppTheme.accentColor,
+                    ),
+                  ),
+                  title: Text(
+                    log.description,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${log.category} • ${log.date.day}/${log.date.month}/${log.date.year}',
+                    style: const TextStyle(color: AppTheme.textColor),
+                  ),
+                  trailing: Text(
+                    '${log.type == 'income' ? '+' : '-'}\$${log.amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: log.type == 'income' 
+                          ? AppTheme.primaryColor 
+                          : AppTheme.accentColor,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              )).toList(),
           ],
         );
       },
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return Colors.grey;
-      case 'sent':
-        return Colors.blue;
-      case 'paid':
-        return Colors.green;
-      case 'overdue':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _showProfileMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: const Text('Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                _showComingSoon(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                _showComingSoon(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/login');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('This feature is coming soon!'),
-        backgroundColor: AppTheme.primaryColor,
-      ),
     );
   }
 }

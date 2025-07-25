@@ -17,18 +17,6 @@ class FinancialLog {
     this.notes,
   });
 
-  factory FinancialLog.fromJson(Map<String, dynamic> json) {
-    return FinancialLog(
-      id: json['id'],
-      description: json['description'],
-      amount: json['amount'].toDouble(),
-      type: json['type'],
-      category: json['category'],
-      date: DateTime.parse(json['date']),
-      notes: json['notes'],
-    );
-  }
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -39,5 +27,17 @@ class FinancialLog {
       'date': date.toIso8601String(),
       'notes': notes,
     };
+  }
+
+  factory FinancialLog.fromJson(Map<String, dynamic> json) {
+    return FinancialLog(
+      id: json['id'],
+      description: json['description'],
+      amount: json['amount'].toDouble(),
+      type: json['type'],
+      category: json['category'],
+      date: DateTime.parse(json['date']),
+      notes: json['notes'],
+    );
   }
 }

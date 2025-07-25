@@ -5,7 +5,7 @@ import '../services/accountant_service.dart';
 
 class AccountantProvider with ChangeNotifier {
   final AccountantService _service = AccountantService();
-
+  
   List<FinancialLog> _financialLogs = [];
   List<Invoice> _invoices = [];
   bool _isLoading = false;
@@ -16,6 +16,7 @@ class AccountantProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  // Financial Logs methods
   Future<void> loadFinancialLogs() async {
     _setLoading(true);
     try {
@@ -28,6 +29,31 @@ class AccountantProvider with ChangeNotifier {
     }
   }
 
+  Future<void> addFinancialLog(FinancialLog log) async {
+    try {
+      await _service.addFinancialLog(log);
+      _financialLogs.add(log);
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteFinancialLog(String id) async {
+    try {
+      await _service.deleteFinancialLog(id);
+      _financialLogs.removeWhere((log) => log.id == id);
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  // Invoice methods
   Future<void> loadInvoices() async {
     _setLoading(true);
     try {
@@ -40,46 +66,11 @@ class AccountantProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addFinancialLog(FinancialLog log) async {
-    try {
-      await _service.addFinancialLog(log);
-      _financialLogs.add(log);
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<void> updateFinancialLog(FinancialLog log) async {
-    try {
-      await _service.updateFinancialLog(log);
-      final index = _financialLogs.indexWhere((l) => l.id == log.id);
-      if (index != -1) {
-        _financialLogs[index] = log;
-        notifyListeners();
-      }
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<void> deleteFinancialLog(String id) async {
-    try {
-      await _service.deleteFinancialLog(id);
-      _financialLogs.removeWhere((log) => log.id == id);
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
   Future<void> addInvoice(Invoice invoice) async {
     try {
       await _service.addInvoice(invoice);
       _invoices.add(invoice);
+      _error = null;
       notifyListeners();
     } catch (e) {
       _error = e.toString();
@@ -87,73 +78,81 @@ class AccountantProvider with ChangeNotifier {
     }
   }
 
-  Future<void> updateInvoice(Invoice invoice) async {
+  Future<void> sendInvoice(String invoiceId, String email) async {
     try {
-      await _service.updateInvoice(invoice);
-      final index = _invoices.indexWhere((i) => i.id == invoice.id);
-      if (index != -1) {
-        _invoices[index] = invoice;
-        notifyListeners();
-      }
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<void> deleteInvoice(String id) async {
-    try {
-      await _service.deleteInvoice(id);
-      _invoices.removeWhere((invoice) => invoice.id == id);
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-    }
-  }
-
-  Future<bool> sendInvoice(String invoiceId, String email) async {
-    try {
-      // Find the invoice
-      final invoice = _invoices.firstWhere((inv) => inv.id == invoiceId);
-      
-      // Update the invoice status to 'sent'
-      invoice.status = 'sent';
-      
-      // Notify listeners about the change
-      notifyListeners();
-      
-      // In a real app, you would send the email here
-      await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-      
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> verifyPayment(String invoiceId) async {
-    try {
-      // Find the invoice
+      await _service.sendInvoice(invoiceId, email);
       final index = _invoices.indexWhere((inv) => inv.id == invoiceId);
       if (index != -1) {
-        // Update the invoice status to 'paid'
-        _invoices[index].status = 'paid';
-        notifyListeners();
-        return true;
+        _invoices[index] = Invoice(
+          id: _invoices[index].id,
+          clientName: _invoices[index].clientName,
+          clientEmail: _invoices[index].clientEmail,
+          clientAddress: _invoices[index].clientAddress,
+          description: _invoices[index].description,
+          amount: _invoices[index].amount,
+          dueDate: _invoices[index].dueDate,
+          createdDate: _invoices[index].createdDate,
+          status: 'sent',
+          notes: _invoices[index].notes,
+        );
       }
-      return false;
+      _error = null;
+      notifyListeners();
     } catch (e) {
       _error = e.toString();
       notifyListeners();
-      return false;
+    }
+  }
+
+  Future<void> verifyPayment(String invoiceId) async {
+    try {
+      await _service.verifyPayment(invoiceId);
+      final index = _invoices.indexWhere((inv) => inv.id == invoiceId);
+      if (index != -1) {
+        _invoices[index] = Invoice(
+          id: _invoices[index].id,
+          clientName: _invoices[index].clientName,
+          clientEmail: _invoices[index].clientEmail,
+          clientAddress: _invoices[index].clientAddress,
+          description: _invoices[index].description,
+          amount: _invoices[index].amount,
+          dueDate: _invoices[index].dueDate,
+          createdDate: _invoices[index].createdDate,
+          status: 'paid',
+          notes: _invoices[index].notes,
+        );
+      }
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
     }
   }
 
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
+  }
+
+  // Dashboard calculations
+  double get totalIncome {
+    return _financialLogs
+        .where((log) => log.type == 'income')
+        .fold(0.0, (sum, log) => sum + log.amount);
+  }
+
+  double get totalExpenses {
+    return _financialLogs
+        .where((log) => log.type == 'expense')
+        .fold(0.0, (sum, log) => sum + log.amount);
+  }
+
+  double get netProfit => totalIncome - totalExpenses;
+
+  double get pendingInvoicesAmount {
+    return _invoices
+        .where((invoice) => invoice.status == 'sent')
+        .fold(0.0, (sum, invoice) => sum + invoice.amount);
   }
 }

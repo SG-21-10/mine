@@ -35,14 +35,11 @@ class Invoice {
   final String clientName;
   final String clientEmail;
   final String? clientAddress;
-  final List<InvoiceItem> items;
-  final double subtotalAmount;
-  final double taxRate;
-  final double taxAmount;
-  final double totalAmount;
-  final DateTime issueDate;
+  final String description;
+  final double amount;
   final DateTime dueDate;
-  String status; // Changed from final to mutable
+  final DateTime createdDate;
+  String status; // 'draft', 'sent', 'paid', 'overdue'
   final String? notes;
 
   Invoice({
@@ -50,14 +47,11 @@ class Invoice {
     required this.clientName,
     required this.clientEmail,
     this.clientAddress,
-    required this.items,
-    required this.subtotalAmount,
-    required this.taxRate,
-    required this.taxAmount,
-    required this.totalAmount,
-    required this.issueDate,
+    required this.description,
+    required this.amount,
     required this.dueDate,
-    required this.status,
+    required this.createdDate,
+    this.status = 'draft',
     this.notes,
   });
 
@@ -67,16 +61,11 @@ class Invoice {
       clientName: json['clientName'],
       clientEmail: json['clientEmail'],
       clientAddress: json['clientAddress'],
-      items: (json['items'] as List)
-          .map((item) => InvoiceItem.fromJson(item))
-          .toList(),
-      subtotalAmount: json['subtotalAmount'].toDouble(),
-      taxRate: json['taxRate'].toDouble(),
-      taxAmount: json['taxAmount'].toDouble(),
-      totalAmount: json['totalAmount'].toDouble(),
-      issueDate: DateTime.parse(json['issueDate']),
+      description: json['description'],
+      amount: json['amount'].toDouble(),
       dueDate: DateTime.parse(json['dueDate']),
-      status: json['status'],
+      createdDate: DateTime.parse(json['createdDate']),
+      status: json['status'] ?? 'draft',
       notes: json['notes'],
     );
   }
@@ -87,13 +76,10 @@ class Invoice {
       'clientName': clientName,
       'clientEmail': clientEmail,
       'clientAddress': clientAddress,
-      'items': items.map((item) => item.toJson()).toList(),
-      'subtotalAmount': subtotalAmount,
-      'taxRate': taxRate,
-      'taxAmount': taxAmount,
-      'totalAmount': totalAmount,
-      'issueDate': issueDate.toIso8601String(),
+      'description': description,
+      'amount': amount,
       'dueDate': dueDate.toIso8601String(),
+      'createdDate': createdDate.toIso8601String(),
       'status': status,
       'notes': notes,
     };

@@ -25,10 +25,12 @@ class PreviewPdfScreen extends StatelessWidget {
             IconButton(
               onPressed: () => _downloadPdf(context),
               icon: const Icon(Icons.download),
+              tooltip: 'Download PDF',
             ),
             IconButton(
               onPressed: () => _sharePdf(context),
               icon: const Icon(Icons.share),
+              tooltip: 'Share PDF',
             ),
           ],
         ),
@@ -49,13 +51,13 @@ class PreviewPdfScreen extends StatelessWidget {
                     const SizedBox(height: 32),
                     _buildInvoiceDetails(),
                     const SizedBox(height: 32),
-                    _buildItemsTable(),
-                    const SizedBox(height: 32),
-                    _buildTotals(),
-                    if (invoice.notes != null && invoice.notes!.isNotEmpty) ...[
+                    _buildAmountSection(),
+                    if (invoice.notes != null) ...[
                       const SizedBox(height: 32),
-                      _buildNotes(),
+                      _buildNotesSection(),
                     ],
+                    const SizedBox(height: 32),
+                    _buildFooter(),
                   ],
                 ),
               ),
@@ -100,8 +102,8 @@ class PreviewPdfScreen extends StatelessWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -113,8 +115,8 @@ class PreviewPdfScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -126,8 +128,8 @@ class PreviewPdfScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -139,8 +141,8 @@ class PreviewPdfScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -152,8 +154,8 @@ class PreviewPdfScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -165,8 +167,8 @@ class PreviewPdfScreen extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -183,7 +185,7 @@ class PreviewPdfScreen extends StatelessWidget {
             title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
             },
           ),
         ],
@@ -195,13 +197,33 @@ class PreviewPdfScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'INVOICE',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.primaryColor,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'INVOICE',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                invoice.status.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(
@@ -211,79 +233,67 @@ class PreviewPdfScreen extends StatelessWidget {
             color: AppTheme.textColor,
           ),
         ),
+        const SizedBox(height: 4),
+        Text(
+          'Created: ${invoice.createdDate.day}/${invoice.createdDate.month}/${invoice.createdDate.year}',
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppTheme.textColor,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildClientInfo() {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'FROM:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Your Company Name',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              const Text(
-                'Your Address Line 1',
-                style: TextStyle(color: AppTheme.textColor),
-              ),
-              const Text(
-                'Your Address Line 2',
-                style: TextStyle(color: AppTheme.textColor),
-              ),
-              const Text(
-                'your.email@company.com',
-                style: TextStyle(color: AppTheme.textColor),
-              ),
-            ],
+        const Text(
+          'Bill To:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
           ),
         ),
-        Expanded(
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.secondaryColor),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'TO:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
               Text(
                 invoice.clientName,
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                   color: AppTheme.textColor,
                 ),
               ),
-              Text(
-                invoice.clientAddress ?? 'No address provided',
-                style: const TextStyle(color: AppTheme.textColor),
-              ),
+              const SizedBox(height: 4),
               Text(
                 invoice.clientEmail,
-                style: const TextStyle(color: AppTheme.textColor),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.textColor,
+                ),
               ),
+              if (invoice.clientAddress != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  invoice.clientAddress ?? '',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.textColor,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -292,299 +302,210 @@ class PreviewPdfScreen extends StatelessWidget {
   }
 
   Widget _buildInvoiceDetails() {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'INVOICE DATE:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              Text(
-                '${invoice.issueDate.day}/${invoice.issueDate.month}/${invoice.issueDate.year}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.textColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'DUE DATE:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              Text(
-                '${invoice.dueDate.day}/${invoice.dueDate.month}/${invoice.dueDate.year}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.textColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'STATUS:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textColor,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(invoice.status),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  invoice.status.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildItemsTable() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'ITEMS:',
+          'Service Details:',
           style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textColor,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Table(
-          border: TableBorder.all(color: Colors.grey[300]!),
-          children: [
-            const TableRow(
-              decoration: BoxDecoration(color: AppTheme.secondaryColor),
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text(
-                    'DESCRIPTION',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text(
-                    'QTY',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text(
-                    'UNIT PRICE',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(12),
-                  child: Text(
-                    'TOTAL',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-            ...invoice.items.map((item) => TableRow(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    item.description,
-                    style: const TextStyle(color: AppTheme.textColor),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '${item.quantity}',
-                    style: const TextStyle(color: AppTheme.textColor),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '\$${item.unitPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(color: AppTheme.textColor),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '\$${item.totalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      color: AppTheme.textColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            )),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTotals() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SizedBox(
-              width: 200,
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Subtotal:',
-                        style: TextStyle(color: AppTheme.textColor),
-                      ),
-                      Text(
-                        '\$${invoice.subtotalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(color: AppTheme.textColor),
-                      ),
-                    ],
-                  ),
-                  if (invoice.taxRate > 0) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tax (${(invoice.taxRate * 100).toStringAsFixed(1)}%):',
-                          style: const TextStyle(color: AppTheme.textColor),
-                        ),
-                        Text(
-                          '\$${invoice.taxAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(color: AppTheme.textColor),
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'TOTAL:',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      Text(
-                        '\$${invoice.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNotes() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'NOTES:',
-          style: TextStyle(
-            fontSize: 12,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: AppTheme.textColor,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          invoice.notes!,
-          style: const TextStyle(color: AppTheme.textColor),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.secondaryColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                invoice.description,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Due Date:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                  Text(
+                    '${invoice.dueDate.day}/${invoice.dueDate.month}/${invoice.dueDate.year}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return Colors.grey;
-      case 'sent':
-        return Colors.blue;
-      case 'paid':
-        return Colors.green;
-      case 'overdue':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildAmountSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.primaryColor),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Subtotal:',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              Text(
+                '\$${invoice.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Tax (0%):',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              const Text(
+                '\$0.00',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textColor,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24, color: AppTheme.primaryColor),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total Amount:',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              Text(
+                '\$${invoice.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Additional Notes:',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppTheme.backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppTheme.secondaryColor),
+          ),
+          child: Text(
+            invoice.notes!,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppTheme.textColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Payment Terms:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textColor,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Payment is due within 30 days of invoice date. Late payments may incur additional charges.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textColor,
+            ),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Thank you for your business!',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _downloadPdf(BuildContext context) {

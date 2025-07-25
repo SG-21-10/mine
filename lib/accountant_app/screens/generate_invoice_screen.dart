@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/invoice.dart';
 import '../providers/accountant_provider.dart';
 import '../theme/app_theme.dart';
+import 'preview_pdf_screen.dart';
 import 'acc_home_screen.dart';
 import 'maintain_financial_log_screen.dart';
 import 'track_financial_logs_screen.dart';
@@ -10,9 +11,7 @@ import 'send_invoice_screen.dart';
 import 'verify_payment_screen.dart';
 
 class GenerateInvoiceScreen extends StatefulWidget {
-  final Invoice? invoice;
-
-  const GenerateInvoiceScreen({Key? key, this.invoice}) : super(key: key);
+  const GenerateInvoiceScreen({Key? key}) : super(key: key);
 
   @override
   State<GenerateInvoiceScreen> createState() => _GenerateInvoiceScreenState();
@@ -23,45 +22,20 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
   final _clientNameController = TextEditingController();
   final _clientEmailController = TextEditingController();
   final _clientAddressController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _amountController = TextEditingController();
   final _notesController = TextEditingController();
-  
-  DateTime _issueDate = DateTime.now();
-  DateTime _dueDate = DateTime.now().add(const Duration(days: 30));
-  double _taxRate = 0.0;
-  
-  final List<InvoiceItem> _items = [];
-  final _itemDescriptionController = TextEditingController();
-  final _itemQuantityController = TextEditingController();
-  final _itemUnitPriceController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.invoice != null) {
-      _populateFields(widget.invoice!);
-    }
-  }
-
-  void _populateFields(Invoice invoice) {
-    _clientNameController.text = invoice.clientName;
-    _clientEmailController.text = invoice.clientEmail;
-    _clientAddressController.text = invoice.clientAddress ?? '';
-    _notesController.text = invoice.notes ?? '';
-    _issueDate = invoice.issueDate;
-    _dueDate = invoice.dueDate;
-    _taxRate = invoice.taxRate;
-    _items.addAll(invoice.items);
-  }
+  DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 30));
 
   @override
   void dispose() {
     _clientNameController.dispose();
     _clientEmailController.dispose();
     _clientAddressController.dispose();
+    _descriptionController.dispose();
+    _amountController.dispose();
     _notesController.dispose();
-    _itemDescriptionController.dispose();
-    _itemQuantityController.dispose();
-    _itemUnitPriceController.dispose();
     super.dispose();
   }
 
@@ -71,36 +45,24 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
       data: AppTheme.themeData,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.invoice == null ? 'Generate Invoice' : 'Edit Invoice'),
+          title: const Text('Generate Invoice'),
           backgroundColor: AppTheme.primaryColor,
-          actions: [
-            IconButton(
-              onPressed: _previewInvoice,
-              icon: const Icon(Icons.preview),
-            ),
-          ],
         ),
         drawer: _buildNavigationDrawer(context),
         body: Container(
           color: AppTheme.backgroundColor,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildClientSection(),
+                  _buildSectionTitle('Client Information'),
+                  _buildClientInfoSection(),
                   const SizedBox(height: 24),
-                  _buildDateSection(),
-                  const SizedBox(height: 24),
-                  _buildItemsSection(),
-                  const SizedBox(height: 24),
-                  _buildTaxSection(),
-                  const SizedBox(height: 24),
-                  _buildNotesSection(),
-                  const SizedBox(height: 24),
-                  _buildSummarySection(),
+                  _buildSectionTitle('Invoice Details'),
+                  _buildInvoiceDetailsSection(),
                   const SizedBox(height: 32),
                   _buildActionButtons(),
                 ],
@@ -146,8 +108,8 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.dashboard),
-            title: const Text('Dashboard'),
+            leading: const Icon(Icons.dashboard, color: AppTheme.accentColor),
+            title: const Text('Dashboard', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
@@ -159,8 +121,8 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text('Maintain Financial Logs'),
+            leading: const Icon(Icons.account_balance_wallet, color: AppTheme.accentColor),
+            title: const Text('Maintain Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -172,8 +134,8 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.analytics),
-            title: const Text('Track Financial Logs'),
+            leading: const Icon(Icons.analytics, color: AppTheme.accentColor),
+            title: const Text('Track Financial Logs', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -185,15 +147,23 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.receipt_long),
-            title: const Text('Generate Invoice'),
+            leading: const Icon(Icons.receipt_long, color: AppTheme.accentColor),
+            title: const Text('Generate Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.send),
-            title: const Text('Send Invoice'),
+            leading: const Icon(Icons.preview, color: AppTheme.accentColor),
+            title: const Text('Preview PDF', style: TextStyle(color: AppTheme.textColor)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPreviewPdfDialog(context);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.send, color: AppTheme.accentColor),
+            title: const Text('Send Invoice', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -205,8 +175,8 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.verified),
-            title: const Text('Verify Payment'),
+            leading: const Icon(Icons.verified, color: AppTheme.accentColor),
+            title: const Text('Verify Payment', style: TextStyle(color: AppTheme.textColor)),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
@@ -219,11 +189,11 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
           ),
           const Divider(),
           ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: AppTheme.accentColor),
+            title: const Text('Sign Out', style: TextStyle(color: AppTheme.accentColor)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/login');
+              Navigator.pushReplacementNamed(context, '/Users/surma/Development/Projects/ff/lib/authpage/pages/login_page.dart');
             },
           ),
         ],
@@ -231,27 +201,79 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
     );
   }
 
-  Widget _buildClientSection() {
+  void _showPreviewPdfDialog(BuildContext context) {
+    final provider = context.read<AccountantProvider>();
+    final availableInvoices = provider.invoices;
+
+    if (availableInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No invoices available to preview'),
+          backgroundColor: AppTheme.accentColor,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Invoice to Preview'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: availableInvoices.length,
+            itemBuilder: (context, index) {
+              final invoice = availableInvoices[index];
+              return ListTile(
+                title: Text(invoice.clientName),
+                subtitle: Text('\$${invoice.amount.toStringAsFixed(2)}'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PreviewPdfScreen(invoice: invoice),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: AppTheme.textColor,
+      ),
+    );
+  }
+
+  Widget _buildClientInfoSection() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Client Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
-            const SizedBox(height: 16),
             TextFormField(
               controller: _clientNameController,
               decoration: const InputDecoration(
                 labelText: 'Client Name',
-                prefixIcon: Icon(Icons.person),
+                prefixIcon: Icon(Icons.person, color: AppTheme.accentColor),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -265,7 +287,7 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
               controller: _clientEmailController,
               decoration: const InputDecoration(
                 labelText: 'Client Email',
-                prefixIcon: Icon(Icons.email),
+                prefixIcon: Icon(Icons.email, color: AppTheme.accentColor),
               ),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
@@ -282,257 +304,73 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
             TextFormField(
               controller: _clientAddressController,
               decoration: const InputDecoration(
-                labelText: 'Client Address',
-                prefixIcon: Icon(Icons.location_on),
+                labelText: 'Client Address (Optional)',
+                prefixIcon: Icon(Icons.location_on, color: AppTheme.accentColor),
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceDetailsSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Service Description',
+                prefixIcon: Icon(Icons.description, color: AppTheme.accentColor),
               ),
               maxLines: 3,
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter client address';
+                  return 'Please enter service description';
                 }
                 return null;
               },
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Invoice Dates',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ListTile(
-                    title: const Text('Issue Date'),
-                    subtitle: Text('${_issueDate.day}/${_issueDate.month}/${_issueDate.year}'),
-                    leading: const Icon(Icons.calendar_today),
-                    onTap: () => _selectDate(context, true),
-                  ),
-                ),
-                Expanded(
-                  child: ListTile(
-                    title: const Text('Due Date'),
-                    subtitle: Text('${_dueDate.day}/${_dueDate.month}/${_dueDate.year}'),
-                    leading: const Icon(Icons.event),
-                    onTap: () => _selectDate(context, false),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildItemsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Invoice Items',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _showAddItemDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Item'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (_items.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Text(
-                    'No items added yet',
-                    style: TextStyle(
-                      color: AppTheme.textColor,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _items.length,
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(item.description),
-                      subtitle: Text('Qty: ${item.quantity} × \$${item.unitPrice.toStringAsFixed(2)}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '\$${item.totalAmount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => _removeItem(index),
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTaxSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tax Information',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
             const SizedBox(height: 16),
             TextFormField(
-              initialValue: (_taxRate * 100).toStringAsFixed(1),
+              controller: _amountController,
               decoration: const InputDecoration(
-                labelText: 'Tax Rate (%)',
-                prefixIcon: Icon(Icons.percent),
-                suffixText: '%',
+                labelText: 'Amount',
+                prefixIcon: Icon(Icons.attach_money, color: AppTheme.accentColor),
               ),
               keyboardType: TextInputType.number,
-              onChanged: (value) {
-                setState(() {
-                  _taxRate = (double.tryParse(value) ?? 0) / 100;
-                });
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter amount';
+                }
+                if (double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
               },
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Additional Notes',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Due Date', style: TextStyle(color: AppTheme.textColor)),
+              subtitle: Text(
+                '${_selectedDueDate.day}/${_selectedDueDate.month}/${_selectedDueDate.year}',
+                style: const TextStyle(color: AppTheme.textColor),
               ),
+              leading: const Icon(Icons.calendar_today, color: AppTheme.accentColor),
+              onTap: () => _selectDueDate(context),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _notesController,
               decoration: const InputDecoration(
-                labelText: 'Notes (Optional)',
-                prefixIcon: Icon(Icons.note),
-                hintText: 'Add any additional notes or terms...',
+                labelText: 'Additional Notes (Optional)',
+                prefixIcon: Icon(Icons.note, color: AppTheme.accentColor),
               ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSummarySection() {
-    final subtotal = _items.fold(0.0, (sum, item) => sum + item.totalAmount);
-    final taxAmount = subtotal * _taxRate;
-    final total = subtotal + taxAmount;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Invoice Summary',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Subtotal:', style: TextStyle(fontSize: 16)),
-                Text('\$${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Tax (${(_taxRate * 100).toStringAsFixed(1)}%):', style: const TextStyle(fontSize: 16)),
-                Text('\$${taxAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16)),
-              ],
-            ),
-            const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Total:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  '\$${total.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
+              maxLines: 2,
             ),
           ],
         ),
@@ -541,189 +379,105 @@ class _GenerateInvoiceScreenState extends State<GenerateInvoiceScreen> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _previewInvoice,
+            icon: const Icon(Icons.preview),
+            label: const Text('Preview Invoice'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: _saveInvoice,
-            child: Text(widget.invoice == null ? 'Create Invoice' : 'Update Invoice'),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _generateInvoice,
+            icon: const Icon(Icons.save),
+            label: const Text('Generate & Save Invoice'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
         ),
       ],
     );
   }
 
-  void _showAddItemDialog() {
-    _itemDescriptionController.clear();
-    _itemQuantityController.clear();
-    _itemUnitPriceController.clear();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Invoice Item'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _itemDescriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                prefixIcon: Icon(Icons.description),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _itemQuantityController,
-              decoration: const InputDecoration(
-                labelText: 'Quantity',
-                prefixIcon: Icon(Icons.numbers),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _itemUnitPriceController,
-              decoration: const InputDecoration(
-                labelText: 'Unit Price',
-                prefixIcon: Icon(Icons.attach_money),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: _addItem,
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addItem() {
-    final description = _itemDescriptionController.text.trim();
-    final quantity = int.tryParse(_itemQuantityController.text) ?? 0;
-    final unitPrice = double.tryParse(_itemUnitPriceController.text) ?? 0.0;
-    final totalAmount = quantity * unitPrice;
-
-    if (description.isNotEmpty && quantity > 0 && unitPrice > 0) {
-      setState(() {
-        _items.add(InvoiceItem(
-          description: description,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          totalAmount: totalAmount,
-        ));
-      });
-      Navigator.pop(context);
-    }
-  }
-
-  void _removeItem(int index) {
-    setState(() {
-      _items.removeAt(index);
-    });
-  }
-
-  Future<void> _selectDate(BuildContext context, bool isIssueDate) async {
+  Future<void> _selectDueDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isIssueDate ? _issueDate : _dueDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      initialDate: _selectedDueDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-    if (picked != null) {
+    if (picked != null && picked != _selectedDueDate) {
       setState(() {
-        if (isIssueDate) {
-          _issueDate = picked;
-        } else {
-          _dueDate = picked;
-        }
+        _selectedDueDate = picked;
       });
     }
   }
 
   void _previewInvoice() {
-    if (_formKey.currentState!.validate() && _items.isNotEmpty) {
-      // Create invoice but don't use it yet
-      _createInvoice();
-      // Show snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preview functionality would be implemented here'),
-          backgroundColor: AppTheme.primaryColor,
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all required fields and add at least one item'),
-          backgroundColor: Colors.red,
+    if (_formKey.currentState!.validate()) {
+      final invoice = _createInvoice();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PreviewPdfScreen(invoice: invoice),
         ),
       );
     }
   }
 
-  void _saveInvoice() {
-    if (_formKey.currentState!.validate() && _items.isNotEmpty) {
+  void _generateInvoice() {
+    if (_formKey.currentState!.validate()) {
       final invoice = _createInvoice();
-      final provider = context.read<AccountantProvider>();
+      context.read<AccountantProvider>().addInvoice(invoice);
       
-      if (widget.invoice == null) {
-        provider.addInvoice(invoice);
-      } else {
-        provider.updateInvoice(invoice);
-      }
-      
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.invoice == null ? 'Invoice created successfully!' : 'Invoice updated successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all required fields and add at least one item'),
-          backgroundColor: Colors.red,
+          content: Text('Invoice generated successfully!'),
+          backgroundColor: AppTheme.accentColor,
         ),
       );
+
+      // Clear form
+      _clientNameController.clear();
+      _clientEmailController.clear();
+      _clientAddressController.clear();
+      _descriptionController.clear();
+      _amountController.clear();
+      _notesController.clear();
+      setState(() {
+        _selectedDueDate = DateTime.now().add(const Duration(days: 30));
+      });
     }
   }
 
   Invoice _createInvoice() {
-    final subtotal = _items.fold(0.0, (sum, item) => sum + item.totalAmount);
-    final taxAmount = subtotal * _taxRate;
-    final total = subtotal + taxAmount;
-    
     return Invoice(
-      id: widget.invoice?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
       clientName: _clientNameController.text.trim(),
       clientEmail: _clientEmailController.text.trim(),
-      clientAddress: _clientAddressController.text.trim(),
-      issueDate: _issueDate,
-      dueDate: _dueDate,
-      items: List.from(_items),
-      subtotalAmount: subtotal,
-      taxRate: _taxRate,
-      taxAmount: taxAmount,
-      totalAmount: total,
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-      status: widget.invoice?.status ?? 'draft',
+      clientAddress: _clientAddressController.text.trim().isEmpty 
+          ? null 
+          : _clientAddressController.text.trim(),
+      description: _descriptionController.text.trim(),
+      amount: double.parse(_amountController.text),
+      dueDate: _selectedDueDate,
+      createdDate: DateTime.now(),
+      notes: _notesController.text.trim().isEmpty 
+          ? null 
+          : _notesController.text.trim(),
     );
   }
 }

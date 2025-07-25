@@ -1,7 +1,7 @@
 // distributor_home_page.dart
 import 'package:flutter/material.dart';
-import '../screens/CatalogOrdersPage.dart';
-import '../screens/Updatestock.dart';
+import 'CatalogOrdersPage.dart';
+import 'Updatestock.dart';
 
 class DistributorHomePage extends StatelessWidget {
   const DistributorHomePage({super.key});
