@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../sales_manager/screens/sales_manager_drawer.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/logo_widget.dart';
@@ -60,6 +61,8 @@ class _LoginPageState extends State<LoginPage> {
       homeScreen = const DistributorHomePage();
     } else if (email == 'accountant@demo.com' && password == 'accountant123') {
       homeScreen = const AccountantHomeScreen();
+    } else if (email == 'manager@demo.com' && password == 'manager123') {
+      homeScreen = const SalesManagerDrawer();
     }
 
     setState(() {
@@ -193,6 +196,7 @@ class _LoginPageState extends State<LoginPage> {
             _buildCredentialRow('Executive', 'executive@demo.com', 'executive123'),
             _buildCredentialRow('Distributor', 'distributor@demo.com', 'distributor123'),
             _buildCredentialRow('Accountant', 'accountant@demo.com', 'accountant123'),
+            _buildCredentialRow('Sales Manager', 'manager@demo.com', 'manager123'),
           ],
         ),
       ),

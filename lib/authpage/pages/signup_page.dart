@@ -10,6 +10,7 @@ import '../../worker/screens/worker_drawer.dart';
 import '../../field_executive/screens/executiveUI.dart';
 import '../../distributor/screens/distributorsUI.dart';
 import '../../accountant_app/screens/acc_home_screen.dart';
+import '../../sales_manager/screens/sales_manager_drawer.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({Key? key}) : super(key: key);
@@ -35,7 +36,8 @@ class _SignUpPageState extends State<SignUpPage> {
     'Worker',
     'Field Executive',
     'Distributor',
-    'Accountant',
+    'Accountant'
+    'Sales Manager',
   ];
 
   @override
@@ -87,6 +89,9 @@ class _SignUpPageState extends State<SignUpPage> {
         break;
       case 'Accountant':
         homeScreen = const AccountantHomeScreen();
+        break;
+      case 'Sales Manager':
+        homeScreen = const SalesManagerDrawer();
         break;
     }
 
